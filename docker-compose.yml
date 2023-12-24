@@ -1,0 +1,160 @@
+# services section
+services:
+
+# ------------------------------------------------------------------------------------ #
+  # MySQL DB
+  mysql-db: # service name
+    image: mariadb:10.6 # image name
+    container_name: mysql-db # container name
+    restart: always # restart policy to keep the service running
+    volumes:
+      - mysql_db_data:/var/lib/mysql # folder to store data (persist the data)
+    environment:
+      MYSQL_DATABASE: inventory-db # database name
+      MYSQL_USER: admin # user name
+      MYSQL_PASSWORD: admin # user password
+      MYSQL_ROOT_PASSWORD: admin # root password
+    ports:
+      - 3306:3306 # port mapping in external:internal format
+    healthcheck:
+      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ] # health check command
+      timeout: 5s # health check timeout
+      retries: 10 # health check retries number
+# ------------------------------------------------------------------------------------ #
+
+# ------------------------------------------------------------------------------------ #
+  # phpMyAdmin
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: phpmyadmin
+    restart: always
+    ports:
+      - 9999:80
+    environment:
+      PMA_HOST: mysql-db # MySQL DB service name
+      PMA_PORT: 3306 # MySQL DB port
+      PMA_ARBITRARY: 1 # allow connection to any MySQL DB
+# ------------------------------------------------------------------------------------ #
+
+# ------------------------------------------------------------------------------------ #
+  # INVENTORY SERVICE
+  inventory-service:
+    build: ./inventory-service # path to Dockerfile
+    container_name: inventory-service
+    restart: always # restart policy to keep the service running
+    ports:
+      - '8082:8082' # port mapping in external:internal format
+    expose:
+      - '8082' # to make the port accessible
+    healthcheck:
+      test: [ 'CMD', 'curl', '-f', 'http://localhost:8082/actuator/health' ] # health check command
+    environment:
+      - DB_URL=jdbc:mysql://mysql-db:3306/inventory-db # MySQL DB URL
+      - KEYCLOAK_ISSUER_URI=http://localhost:8080/realms/customers-realm # Keycloak realm URL
+      - KEYCLOAK_JWK_SET_URI=http://keycloak:8080/realms/customers-realm/protocol/openid-connect/certs # Keycloak JWK URL to retrieve the public key to verify the JWT signature
+    depends_on:
+      - mysql-db # MySQL DB service name
+# ------------------------------------------------------------------------------------ #
+
+# ------------------------------------------------------------------------------------ #
+  # POSTGRES DB
+  postgres-db:
+    image: postgres
+    container_name: postgres-db
+    volumes:
+      - postgres_db_data:/var/lib/postgresql/data # to persist the data
+    environment:
+      POSTGRES_DB: keycloak_db # database name
+      POSTGRES_USER: admin # user name
+      POSTGRES_PASSWORD: admin # user password
+    restart:
+        always
+    ports:
+      - '5432:5432'
+    expose:
+      - '5432'
+    healthcheck:
+      test: "exit 0" # to check if the container is running
+# ------------------------------------------------------------------------------------ #
+
+# ------------------------------------------------------------------------------------ #
+  # PGADMIN
+  pgadmin4:
+    image: dpage/pgadmin4
+    container_name: pgadmin4
+    restart: always
+    ports:
+      - "8888:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@gmail.com # pgadmin email
+      PGADMIN_DEFAULT_PASSWORD: admin # pgadmin password
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+# ------------------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------------------ #
+  # KEYCLOAK
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: keycloak
+    environment:
+      KC_DB: postgres # database type
+      KC_DB_URL: jdbc:postgresql://postgres-db:5432/keycloak_db # database URL
+      KC_DB_USERNAME: admin # database user name
+      KC_DB_PASSWORD: admin # database user password
+      KEYCLOAK_ADMIN: admin # Keycloak admin user name
+      KEYCLOAK_ADMIN_PASSWORD: admin # Keycloak admin user password
+      KC_HTTP_ENABLED: "true" # enable HTTP
+      KC_HOSTNAME_STRICT_HTTPS: "false" # disable HTTPS
+    command:
+      - start-dev # to start Keycloak in development mode
+    restart: always
+    ports:
+      - '8080:8080'
+    expose:
+      - '8080'
+    depends_on:
+      - postgres-db # Postgres service name
+# ------------------------------------------------------------------------------------ #
+
+# ------------------------------------------------------------------------------------ #
+  # CUSTOMERS SERVICE THYMELEAF
+  customers-thymeleaf:
+    build: ./customers-front-app-thymeleaf
+    container_name: customers-thymeleaf
+    restart: always
+    ports:
+      - '8081:8081'
+    expose:
+      - '8081'
+    healthcheck:
+      test: [ 'CMD', 'curl', '-f', 'http://localhost:8081/actuator/health' ]
+    depends_on:
+      - keycloak
+    environment:
+      - KEYCLOAK_REDIRECT_URI=http://localhost:8081/login/oauth2/code/customers-client # redirect URI to receive the authorization code
+      - KEYCLOAK_ISSUER_URI=http://keycloak:8080/realms/customers-realm # Keycloak realm URL
+      - KEYCLOAK_AUTH=http://localhost:8080/realms/customers-realm/protocol/openid-connect/auth # to be able to use the Keycloak login page
+      - KEYCLOAK_AUTH_TOKEN=http://keycloak:8080/realms/customers-realm/protocol/openid-connect/token # to get the access token
+      - JWT_JWK_SET_URI=http://keycloak:8080/realms/customers-realm/protocol/openid-connect/certs # to retrieve the public key to verify the JWT signature
+      - INVENTORY_SERVICE_BASE_URI=http://inventory-service:8082 # Inventory service URL
+
+# ------------------------------------------------------------------------------------ #
+
+# ------------------------------------------------------------------------------------ #
+  # CUSTOMERS SERVICE ANGULAR
+  customers-angular:
+    build: ./customers-front-app-angular
+    container_name: customers-angular
+    ports:
+      - '8083:80'
+    expose:
+      - '8083'
+    restart: always
+# ------------------------------------------------------------------------------------ #
+
+# ------------------------------------------------------------------------------------ #
+#Volumes section
+volumes: # to persist the data
+  mysql_db_data:
+  postgres_db_data:
+  pgadmin_data:

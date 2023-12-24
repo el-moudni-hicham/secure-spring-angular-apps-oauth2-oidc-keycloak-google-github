@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<html lang="en" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <title>APP OAUTH2</title>
-    <link rel="stylesheet" type="text/css" href="/webjars/bootstrap/5.3.2/css/bootstrap.min.css">
+    <link href="/webjars/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet" type="text/css">
     <script src="webjars/bootstrap/5.3.2/js/bootstrap.bundle.js"></script>
 </head>
 <body>
@@ -12,13 +12,14 @@
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <div class="container-fluid">
         <a class="navbar-brand" th:href="@{/}">Thymeleaf</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <button aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation" class="navbar-toggler"
+                data-bs-target="#navbarSupportedContent" data-bs-toggle="collapse" type="button">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link active" aria-current="page" th:href="@{/}">Home</a>
+                    <a aria-current="page" class="nav-link active" th:href="@{/}">Home</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" th:href="@{/customers}">Customers</a>
@@ -31,19 +32,21 @@
             </ul>
             <ul class="d-flex">
                 <span class="nav-item dropdown m-1 p-1">
-                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <span th:text="${#authentication.name}"></span>
-                    </a>
-                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                       <a aria-expanded="false" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#"
+                                id="navbarDropdown" role="button">
+                         <span th:text="${#authentication.name}"></span>
+                       </a>
+                        <ul aria-labelledby="navbarDropdown" class="dropdown-menu">
                         <li><a class="dropdown-item" th:href="@{/oauth2Login}">Login</a></li>
                         <li>
-                            <form th:action="@{/logout}" method="post">
-                                <button class="dropdown-item" >Logout</button>
+                            <form method="post" th:action="@{/logout}">
+                                <button class="dropdown-item">Logout</button>
                             </form>
                         </li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#">Profile</a></li>
-                    </ul>
+                        <li><a class="dropdown-item"
+                               th:href="@{http://localhost:8080/realms/customers-realm/account/#/personal-info}">Profile</a></li>
+                        </ul>
                 </span>
             </ul>
         </div>

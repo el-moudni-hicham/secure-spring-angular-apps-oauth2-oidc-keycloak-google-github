@@ -34,7 +34,7 @@ public class SecurityConfig {
         return http
                 // Enable (CSRF) protection
                 .csrf(Customizer.withDefaults())
-                .authorizeHttpRequests(ar->ar.requestMatchers("/","/oauth2Login/**","/webjars/**","/h2-console/**").permitAll())
+                .authorizeHttpRequests(ar->ar.requestMatchers("/actuator/**","/","/oauth2Login/**","/webjars/**","/h2-console/**").permitAll())
                 .headers(h->h.frameOptions(fo->fo.disable()))
                 .csrf(csrf->csrf.ignoringRequestMatchers("/h2-console/**"))
                 .authorizeHttpRequests(ar->ar.anyRequest().authenticated())
